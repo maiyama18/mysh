@@ -2,3 +2,4 @@
 *.iml
 CMakeLists.txt
 mysh
+cmake-build-debug
