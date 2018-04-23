@@ -2,37 +2,63 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <stdlib.h>
 
 #define MAX_CMD_LEN 80
 #define MAX_PATH_LEN 80
 #define MAX_USERNAME_LEN 80
 
+#define MAX_SYSPATH_NUM 40
 #define MAX_ARGS_NUM 10
 
 // todo: PATHを探索
 // todo: statusによって色変更
 // todo: history
+
+int num_syspath;
+char *syspath[MAX_SYSPATH_NUM];
+
+void get_syspath();
 void print_prompt();
+int parse_input(char *cmd, char *args[]);
 int split(char *input, char *output[], char *sep);
 
 int main() {
+    get_syspath();
+
     while (1) {
-        char *input;
+        char cmd[MAX_CMD_LEN];
         char *args[MAX_ARGS_NUM];
+        for (int i = 0; i < MAX_ARGS_NUM; i++) {
+            args[i] = NULL;
+        }
 
         print_prompt();
 
-        fgets(input, MAX_CMD_LEN, stdin);
-        split(input, args, " \n");
+        int num_args = parse_input(cmd, args);
+//        printf("cmd: %s\n", cmd);
+//        for (int i = 0; i < MAX_ARGS_NUM; i++) {
+//            printf("args[%d]: %s\n", i, args[i]);
+//        }
 
         pid_t pid = fork();
         int status;
         if (pid == 0) { // child process
-            status = execv(args[0], args);
+//            char *_args[] = {"echo", "hello", "world", NULL};
+            printf("cmd: %s\n", cmd);
+            for (int i = 0; i < 4; i++) {
+                printf("args[%d]: %s\n", i, args[i]);
+            }
+            status = execv(cmd, args);
         } else {
             wait(&status);
         }
     }
+}
+
+void get_syspath() {
+    char *path_str = getenv("PATH");
+    num_syspath = split(path_str, syspath, ":");
 }
 
 void print_prompt() {
@@ -41,6 +67,30 @@ void print_prompt() {
     path = getcwd(buf, MAX_PATH_LEN);
 
     printf("%s@%s -> ", username, path);
+}
+
+int parse_input(char *cmd, char *args[]) {
+    int num_args;
+    char input[MAX_CMD_LEN];
+    char input_cmd[MAX_CMD_LEN];
+
+    fgets(input, MAX_CMD_LEN, stdin);
+    num_args = split(input, args, " \n");
+
+    sprintf(input_cmd, "%s", args[0]);
+
+    for (int i = 0; i < num_syspath; i++) {
+        char *cmd_cand[MAX_CMD_LEN];
+        sprintf(cmd_cand, "%s/%s", syspath[i], input_cmd);
+
+        if (access(cmd_cand, 0) == 0) {
+            strcpy(cmd, cmd_cand);
+
+            break;
+        }
+    }
+
+    return num_args;
 }
 
 int split(char *input, char *output[], char *sep) {
