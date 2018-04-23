@@ -32,25 +32,30 @@ int main() {
         for (int i = 0; i < MAX_ARGS_NUM; i++) {
             args[i] = NULL;
         }
-
         print_prompt();
 
         int num_args = parse_input(cmd, args);
-//        printf("cmd: %s\n", cmd);
-//        for (int i = 0; i < MAX_ARGS_NUM; i++) {
-//            printf("args[%d]: %s\n", i, args[i]);
-//        }
+        printf("before fork\n");
+        printf("cmd: %s\n", cmd);
+        for (int i = 0; i < num_args; i++) {
+            printf("args[%d]: %s\n", i, args[i]);
+        }
 
         pid_t pid = fork();
         int status;
         if (pid == 0) { // child process
-//            char *_args[] = {"echo", "hello", "world", NULL};
+            printf("after fork (child)\n");
             printf("cmd: %s\n", cmd);
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < num_args; i++) {
                 printf("args[%d]: %s\n", i, args[i]);
             }
             status = execv(cmd, args);
         } else {
+            printf("after fork (parent)\n");
+            printf("cmd: %s\n", cmd);
+            for (int i = 0; i < num_args; i++) {
+                printf("args[%d]: %s\n", i, args[i]);
+            }
             wait(&status);
         }
     }
